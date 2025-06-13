@@ -27,7 +27,7 @@ import flax.linen as nn
 from flax.linen import partitioning as nn_partitioning
 
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import Config, DType
 from MaxText.globals import PKG_DIR
 from MaxText.layers import linears
@@ -39,7 +39,7 @@ class TokenDroppingTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="token_dropping_test",
         enable_checkpointing=False,
@@ -163,7 +163,7 @@ class DeepSeekRoutingTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="deepseek_routing_test",
         enable_checkpointing=False,
@@ -340,7 +340,7 @@ class RoutedMoeTest(unittest.TestCase):
 
   @pytest.mark.tpu_only
   def test_megablox(self):
-    cfg = pyconfig.initialize(
+    cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="moe_block_megablox_test",
         enable_checkpointing=False,
@@ -368,7 +368,7 @@ class RoutedMoeTest(unittest.TestCase):
 
   @pytest.mark.tpu_only
   def test_ragged_dot(self):
-    cfg = pyconfig.initialize(
+    cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="moe_block_ragged_dot_test",
         enable_checkpointing=False,
@@ -396,7 +396,7 @@ class RoutedMoeTest(unittest.TestCase):
 
   @pytest.mark.tpu_only
   def test_dense(self):
-    cfg = pyconfig.initialize(
+    cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="moe_block_dense_test",
         enable_checkpointing=False,
@@ -424,7 +424,7 @@ class RoutedMoeTest(unittest.TestCase):
 
   @pytest.mark.tpu_only
   def test_megablox_expert_parallelism(self):
-    cfg = pyconfig.initialize(
+    cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="moe_block_megablox_ep_test",
         enable_checkpointing=False,
@@ -454,7 +454,7 @@ class RoutedMoeTest(unittest.TestCase):
 
   @pytest.mark.tpu_only
   def test_megablox_context_parallelism(self):
-    cfg = pyconfig.initialize(
+    cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="moe_block_megablox_cp_test",
         enable_checkpointing=False,

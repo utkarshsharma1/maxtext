@@ -27,7 +27,7 @@ import unittest
 import jax.numpy as jnp
 from jax.sharding import Mesh
 from MaxText.globals import PKG_DIR
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import maxtext_utils
 from MaxText.layers import attentions, embeddings, llama4
 import numpy as np
@@ -591,7 +591,7 @@ class Llama4VisionAttentionTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         **self.config_arguments,
     )
@@ -859,7 +859,7 @@ class Llama4VisionEncoderTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         **self.config_arguments,
     )

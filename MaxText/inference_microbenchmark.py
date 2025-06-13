@@ -29,7 +29,7 @@ from MaxText import maxengine
 from MaxText import maxtext_utils
 from MaxText import prefill_packing
 from MaxText import profiler
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.utils import gcs_utils
 
 import warnings
@@ -429,7 +429,7 @@ def run_benchmarks(config):
 
 def run_benchmarks_with_unsafe_rbg(config, **kwargs):
   jax.config.update("jax_default_prng_impl", "unsafe_rbg")
-  return run_benchmarks(pyconfig.initialize(config, **kwargs))
+  return run_benchmarks(MaxText.configs.loader.initialize(config, **kwargs))
 
 
 def main(config, **kwargs):

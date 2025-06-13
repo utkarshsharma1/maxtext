@@ -24,7 +24,7 @@ import jax
 from jax.sharding import Mesh
 from jax.experimental import mesh_utils
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.input_pipeline import _grain_data_processing
 from MaxText.input_pipeline import input_pipeline_interface
 from MaxText.globals import PKG_DIR
@@ -40,7 +40,7 @@ class GrainArrayRecordProcessingTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     temp_dir = tempfile.gettempdir()
-    self.config = pyconfig.initialize(
+    self.config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         per_device_batch_size=1,
         run_name="test",
@@ -115,7 +115,7 @@ class GrainParquetProcessingTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     temp_dir = tempfile.gettempdir()
-    self.config = pyconfig.initialize(
+    self.config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         per_device_batch_size=1,
         run_name="test",

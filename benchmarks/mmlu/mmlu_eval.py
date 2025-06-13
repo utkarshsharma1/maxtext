@@ -54,7 +54,7 @@ from mmlu_categories import subcategories
 
 from tqdm import tqdm
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import max_logging
 from MaxText import max_utils
 from MaxText import maxengine
@@ -223,7 +223,7 @@ def validate_config(config):
 if __name__ == "__main__":
   jax.config.update("jax_default_prng_impl", "unsafe_rbg")
   flags.FLAGS(sys.argv)
-  cfg = pyconfig.initialize(sys.argv)
+  cfg = MaxText.configs.loader.initialize(sys.argv)
   validate_config(cfg)
   max_utils.print_system_information()
   main(cfg)

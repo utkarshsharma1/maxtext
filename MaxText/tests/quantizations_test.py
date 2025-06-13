@@ -30,7 +30,7 @@ from flax import linen as nn
 from aqt.jax.v2 import aqt_tensor
 
 from MaxText.globals import PKG_DIR
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.layers import quantizations
 
 _QUERY_REGEX = ".*/query"
@@ -57,7 +57,7 @@ class QuantTestModule(nn.Module):
 
 
 def _configure_quantization(quant_str="", quant_cfg_path="", mode_str="train", replicate_scale=False):
-  config = pyconfig.initialize(
+  config = MaxText.configs.loader.initialize(
       [None, os.path.join(PKG_DIR, "configs", "base.yml")],
       enable_checkpointing=False,
       quantization=quant_str,

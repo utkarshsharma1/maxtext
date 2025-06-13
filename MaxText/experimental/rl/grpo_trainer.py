@@ -56,7 +56,7 @@ from MaxText import max_utils
 from MaxText import maxengine
 from MaxText import maxtext_utils
 from MaxText import profiler
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import Array
 from MaxText.experimental.rl import grpo_input_pipeline
 from MaxText.gcp_workload_monitor import GCPWorkloadMonitor
@@ -935,14 +935,14 @@ def main(argv: Sequence[str]) -> None:
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
   if "xla_tpu_spmd_rng_bit_generator_unsafe" not in os.environ.get("LIBTPU_INIT_ARGS", ""):
     os.environ["LIBTPU_INIT_ARGS"] = os.environ.get("LIBTPU_INIT_ARGS", "") + " --xla_tpu_spmd_rng_bit_generator_unsafe=true"
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   if not config.use_grpo:
     raise ValueError("Please set the value of use_grpo to True")
   if config.decode_sampling_strategy == "greedy" or config.decode_sampling_temperature == 0.0:
     raise ValueError(
         "Please set decode_sampling_strategy as 'weighted' and decode_sampling_temperature as a positive number"
     )
-  config_inference = pyconfig.initialize(
+  config_inference = MaxText.configs.loader.initialize(
       list(argv)
       + ["ici_tensor_parallelism=4", "per_device_batch_size=" + str(config.per_device_batch_size * config.num_generations)]
   )

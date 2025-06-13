@@ -28,7 +28,7 @@ from pathwaysutils.elastic import manager
 
 from MaxText import elastic_train
 from MaxText import max_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 
 logging.basicConfig()
 logging.getLogger("pathwaysutils.elastic.manager").setLevel(logging.INFO)
@@ -111,7 +111,7 @@ class ElasticTrainTest(parameterized.TestCase):
 
     # Set checkpoint_period which should be unchanged.
     # Set enable_single_controller to avoid jax.distribute_initialize
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         argv=[
             "test",
             "MaxText/configs/base.yml",

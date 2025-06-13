@@ -44,7 +44,7 @@ def main(argv: Sequence[str]) -> None:
   jax.config.update("jax_default_prng_impl", "unsafe_rbg")
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   _validate_config(config)
   max_utils.print_system_information()
 

@@ -29,7 +29,7 @@ import jax.numpy as jnp
 
 from flax.core.scope import VariableDict
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import multimodal_utils
 from MaxText.layers import models
 from MaxText.globals import PKG_DIR
@@ -70,7 +70,7 @@ class VisionEncoderEmbeddingTest(unittest.TestCase):
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
     """Correctness test for the gemma3-4b image embedding."""
     # Load weights from reference checkpoint
-    config = pyconfig.initialize(VisionEncoderEmbeddingTest.CONFIGS["gemma3-4b"])
+    config = MaxText.configs.loader.initialize(VisionEncoderEmbeddingTest.CONFIGS["gemma3-4b"])
     engine = maxengine.MaxEngine(config)
     rng = jax.random.PRNGKey(1234)
     rng, rng_load_params = jax.random.split(rng)

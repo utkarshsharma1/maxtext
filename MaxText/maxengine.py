@@ -42,7 +42,7 @@ from jetstream.engine.tokenizer_pb2 import TokenizerType
 from MaxText import inference_utils
 from MaxText import max_utils
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import MODEL_MODE_PREFILL, DECODING_ACTIVE_SEQUENCE_INDICATOR, MODEL_MODE_AUTOREGRESSIVE
 from MaxText.globals import PKG_DIR
 from MaxText.inference.page_manager import PageManager, PageState
@@ -1527,6 +1527,6 @@ def create_engine_from_config_flags(
     option = f"{k}={v}"
     updated_args.append(option)
   print(f"Invoking maxengine with args:\n \t{updated_args}")
-  cfg = pyconfig.initialize(updated_args)
+  cfg = MaxText.configs.loader.initialize(updated_args)
   engine = MaxEngine(cfg)
   return engine

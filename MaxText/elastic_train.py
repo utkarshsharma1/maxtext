@@ -67,7 +67,7 @@ from MaxText import max_utils
 from MaxText import maxtext_utils
 from MaxText import max_logging
 from MaxText import profiler
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.gcp_workload_monitor import GCPWorkloadMonitor
 from MaxText.input_pipeline.input_pipeline_interface import create_data_iterator
 from MaxText.metric_logger import MetricLogger
@@ -476,7 +476,7 @@ def main(argv: Sequence[str]) -> None:
 
   elastic_manager = elastic_initialize(jax.devices())
 
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   max_utils.print_system_information()
   validate_train_config(config)
   os.environ["TFDS_DATA_DIR"] = config.dataset_path or ""

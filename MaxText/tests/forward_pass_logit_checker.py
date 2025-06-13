@@ -51,7 +51,7 @@ from transformers import AutoModelForCausalLM
 
 from MaxText import max_logging
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import DECODING_ACTIVE_SEQUENCE_INDICATOR
 from MaxText.globals import PKG_DIR
 from MaxText.layers import models
@@ -170,5 +170,5 @@ if __name__ == "__main__":
   for arg in to_remove_args:
     model_args = [s for s in model_args if not s.startswith(arg)]
 
-  cfg = pyconfig.initialize(model_args)
+  cfg = MaxText.configs.loader.initialize(model_args)
   main(cfg, test_args)

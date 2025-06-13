@@ -39,7 +39,7 @@ from MaxText import max_logging
 from MaxText import max_utils
 from MaxText import maxtext_utils
 from MaxText import optimizers
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import DecoderBlockType
 from MaxText.layers import models, quantizations
 from MaxText.train import save_checkpoint
@@ -206,7 +206,7 @@ def generate_decode_checkpoint(config):
 
 def main(argv: Sequence[str]) -> None:
   print(argv)
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   generate_decode_checkpoint(config)
 
 

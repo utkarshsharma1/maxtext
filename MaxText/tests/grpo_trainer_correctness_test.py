@@ -47,7 +47,7 @@ import transformers
 
 from MaxText import maxengine
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import Array
 from MaxText.experimental.rl.grpo_trainer import compute_log_probs, grpo_loss_fn, _merge_grpo_state, generate_completions
 from MaxText.globals import PKG_DIR
@@ -109,13 +109,13 @@ class GrpoTrainerTest(unittest.TestCase):
     exit_code = subprocess.call(command, cwd=os.path.dirname(PKG_DIR))
     if exit_code != 0:
       raise ValueError(f"{command} failed with exit code: {exit_code}")
-    self.config = pyconfig.initialize(
+    self.config = MaxText.configs.loader.initialize(
         [None, "MaxText/experimental/rl/grpo_trainer_test.yml"],
         run_name="unit_test_grpo_trainer",
         tokenizer_path=os.path.join(os.path.dirname(PKG_DIR), "assets", "llama3.1-tokenizer"),
         enable_checkpointing=False,
     )
-    self.config_inference = pyconfig.initialize(
+    self.config_inference = MaxText.configs.loader.initialize(
         [None, "MaxText/experimental/rl/grpo_trainer_test.yml"],
         run_name="unit_test_grpo_trainer_inference",
         tokenizer_path=os.path.join(os.path.dirname(PKG_DIR), "assets", "llama3.1-tokenizer"),

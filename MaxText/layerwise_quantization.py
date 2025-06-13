@@ -43,7 +43,7 @@ from flax.linen import partitioning as nn_partitioning
 from MaxText import checkpointing
 from MaxText import max_utils
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import common_types
 from MaxText.layers import models, quantizations, deepseek
 import orbax.checkpoint as ocp
@@ -178,7 +178,7 @@ def main(argv: Sequence[str]) -> None:
   jax.config.update("jax_default_prng_impl", "unsafe_rbg")
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   validate_config(config)
   max_utils.print_system_information()
 

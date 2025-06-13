@@ -35,7 +35,7 @@ import optax
 
 from MaxText import max_utils
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.globals import PKG_DIR
 from MaxText.layers import models
 from MaxText.layers import quantizations
@@ -173,7 +173,7 @@ class MaxUtilsInitStateWithMultipleCollections(unittest.TestCase):
   """test class for multiple collection state in maxutils"""
 
   def setUp(self):
-    self.config = pyconfig.initialize([None, os.path.join(PKG_DIR, "configs", "base.yml")], enable_checkpointing=False)
+    self.config = MaxText.configs.loader.initialize([None, os.path.join(PKG_DIR, "configs", "base.yml")], enable_checkpointing=False)
     self.model = ModelWithMultipleCollections()
     self.key1, self.key2, self.key3 = random.split(random.key(0), num=3)
     self.input = random.normal(self.key1, (self.config.global_batch_size_to_load, self.config.max_target_length))
@@ -209,7 +209,7 @@ class MaxUtilsInitTransformerState(unittest.TestCase):
   """Tests initialization of transformer states in max_utils.py"""
 
   def setUp(self):
-    self.config = pyconfig.initialize([None, os.path.join(PKG_DIR, "configs", "base.yml")], enable_checkpointing=False)
+    self.config = MaxText.configs.loader.initialize([None, os.path.join(PKG_DIR, "configs", "base.yml")], enable_checkpointing=False)
     devices_array = maxtext_utils.create_device_mesh(self.config)
     self.mesh = Mesh(devices_array, self.config.mesh_axes)
     quant = quantizations.configure_quantization(self.config)

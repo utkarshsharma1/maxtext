@@ -33,7 +33,7 @@ class MultiTokenPredictionLayerTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "configs", "base.yml")],
         run_name="multi_token_prediction_layer_test",
         skip_jax_distributed_system=True,

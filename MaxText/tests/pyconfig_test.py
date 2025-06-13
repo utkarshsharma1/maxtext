@@ -14,7 +14,7 @@ limitations under the License.
 import unittest
 import os.path
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.globals import PKG_DIR
 
 
@@ -30,7 +30,7 @@ class PyconfigTest(unittest.TestCase):
     self.assertEqual(raw_keys, {"megablox": None, "foo": ["x", "y"]})
 
   def test_empty_string_parse_as_empty_string(self):
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [os.path.join(PKG_DIR, "train.py"), os.path.join(PKG_DIR, "configs", "base.yml")],
         skip_jax_distributed_system=True,  # We should check for this automatically instead - b/407047411
         quantization="",
@@ -77,7 +77,7 @@ class PyconfigTest(unittest.TestCase):
     )
 
   def test_multiple_unmodifiable_configs(self):
-    config_train = pyconfig.initialize(
+    config_train = MaxText.configs.loader.initialize(
         [os.path.join(PKG_DIR, "train.py"), os.path.join(PKG_DIR, "configs", "base.yml")],
         per_device_batch_size=1.0,
         run_name="test",
@@ -92,7 +92,7 @@ class PyconfigTest(unittest.TestCase):
         ici_tensor_parallelism=-1,
         ici_fsdp_parallelism=4,
     )
-    config_inference = pyconfig.initialize(
+    config_inference = MaxText.configs.loader.initialize(
         [os.path.join(PKG_DIR, "decode.py"), os.path.join(PKG_DIR, "configs", "base.yml")],
         per_device_batch_size=1.0,
         run_name="test",
@@ -115,7 +115,7 @@ class PyconfigTest(unittest.TestCase):
       config_inference.ici_fsdp_parallelism = 4
 
   def test_overriding_model(self):
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [os.path.join(PKG_DIR, "train.py"), os.path.join(PKG_DIR, "configs", "base.yml")],
         skip_jax_distributed_system=True,
         model_name="gemma-7b",

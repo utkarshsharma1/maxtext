@@ -50,7 +50,7 @@ from MaxText import checkpointing
 from MaxText import llama_or_mistral_ckpt
 from MaxText import max_logging
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.generate_param_only_checkpoint import _read_train_checkpoint
 from MaxText.max_utils import unpermute_from_match_maxtext_rope
 
@@ -254,7 +254,7 @@ def convert_orbax_hf(hf_model_path, config):
 
 
 def main(argv: Sequence[str]):
-  config = pyconfig.initialize(argv[:-1])
+  config = MaxText.configs.loader.initialize(argv[:-1])
   hf_model_path = argv[-1].split("=")[1]
   print(f"Will save converted HuggingFace checkpoint to path = {hf_model_path}")
 

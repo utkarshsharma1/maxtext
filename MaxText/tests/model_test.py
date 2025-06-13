@@ -26,7 +26,7 @@ import jax.numpy as jnp
 from jax.sharding import Mesh
 
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import DECODING_ACTIVE_SEQUENCE_INDICATOR, MODEL_MODE_TRAIN, MODEL_MODE_PREFILL, MODEL_MODE_AUTOREGRESSIVE
 from MaxText.globals import PKG_DIR
 from MaxText.layers import models
@@ -46,7 +46,7 @@ class TestModel(unittest.TestCase):
 
   def init_pyconfig(self, **kwargs):
     """Init pyconfig."""
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         per_device_batch_size=1.0,
         run_name="test",

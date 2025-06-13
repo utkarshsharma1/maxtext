@@ -36,7 +36,7 @@ from flax.linen import partitioning as nn_partitioning
 from MaxText import checkpointing
 from MaxText import maxtext_utils
 from MaxText import max_logging
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.train import setup_mesh_and_model, get_first_step, validate_train_config, save_checkpoint
 from MaxText.layers import models
 
@@ -114,7 +114,7 @@ def add_entropy_to_checkpoint(state):
 def main(argv: Sequence[str]) -> None:
   jax.config.update("jax_cpu_enable_gloo_collectives", True)
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
-  config = pyconfig.initialize(argv)
+  config = MaxText.configs.loader.initialize(argv)
   validate_train_config(config)
   print(f"Found {jax.device_count()} devices.")
   print(f"Found {jax.process_count()} processes.")

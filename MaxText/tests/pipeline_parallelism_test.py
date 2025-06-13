@@ -26,7 +26,7 @@ from flax.core import meta
 from flax import linen as nn
 
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.common_types import MODEL_MODE_TRAIN
 from MaxText.globals import PKG_DIR
 from MaxText.layers import pipeline
@@ -159,7 +159,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_circular_minimum_microbatches_same_output_and_grad(self):
     # 4 stages, 8 layers (2 repeats, 1 layer per stage), 4 microbatches
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         enable_goodput_recording=False,
@@ -176,7 +176,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_circular_extra_microbatches_same_output_and_grad(self):
     # 4 stages, 8 layers (2 repeats, 1 layer per stage), 8 microbatches
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         enable_goodput_recording=False,
@@ -193,7 +193,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_circular_deepseek_megablox_same_output_and_grad(self):
     # 4 stages, 8 layers (2 repeats, 1 layer per stage), 8 microbatches
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         enable_goodput_recording=False,
@@ -216,7 +216,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_circular_ag_once(self):
     # 2 stages, 8 microbatches, all gather once
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         enable_goodput_recording=False,
@@ -234,7 +234,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_non_circular_same_output_and_grad(self):
     # 4 stages, 4 layers (no circular repeats, 1 layer per stage), 4 microbatches
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         run_name="non_circular",
@@ -282,7 +282,7 @@ class PipelineParallelismTest(unittest.TestCase):
   @pytest.mark.tpu_only
   def test_delay_activation_forwarding_same_output_and_grad(self):
     # 4 stages, delayed activation forwarding, 8 layers (2 repeats, 1 layer per stage), 8 microbatches
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [sys.argv[0], os.path.join(PKG_DIR, "configs", "base.yml")],
         enable_checkpointing=False,
         enable_goodput_recording=False,

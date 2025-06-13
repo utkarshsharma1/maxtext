@@ -45,7 +45,7 @@ from datasets import load_dataset
 
 from MaxText import maxengine
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.experimental.rl.grpo_trainer import compute_log_probs, grpo_loss_fn, _merge_grpo_state, generate_completions
 from MaxText.globals import PKG_DIR
 from MaxText.layers import models
@@ -57,19 +57,19 @@ class GRPOTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [None, "MaxText/experimental/rl/grpo_trainer_test.yml"],
         model_name="llama3.1-8b",
         run_name="generate_grpo_test_data",
         load_parameters_path="gs://maxtext-model-checkpoints/llama3.1-8b/2025-01-23-19-04/scanned/0/items",
         enable_checkpointing=True,
     )
-    self.cfg_no_ckpt_loading = pyconfig.initialize(
+    self.cfg_no_ckpt_loading = MaxText.configs.loader.initialize(
         [None, "MaxText/experimental/rl/grpo_trainer_test.yml"],
         run_name="generate_grpo_test_data_no_ckpt_loading",
         enable_checkpointing=False,
     )
-    self.cfg_no_ckpt_loading_inference = pyconfig.initialize(
+    self.cfg_no_ckpt_loading_inference = MaxText.configs.loader.initialize(
         [None, "MaxText/experimental/rl/grpo_trainer_test.yml"],
         run_name="generate_grpo_test_data_no_ckpt_loading_inference",
         enable_checkpointing=False,

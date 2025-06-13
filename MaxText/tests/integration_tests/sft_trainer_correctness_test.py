@@ -39,7 +39,7 @@ from jax.sharding import Mesh
 from transformers import AutoTokenizer
 
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.globals import PKG_DIR
 from MaxText.input_pipeline import _input_pipeline_utils
 from MaxText.layers import models
@@ -55,7 +55,7 @@ def get_golden_data(model_name):
 
 def initialize_config():
   """Initialize configurations."""
-  return pyconfig.initialize(
+  return MaxText.configs.loader.initialize(
       [sys.argv[0], os.path.join(PKG_DIR, "configs", "sft.yml")],
       run_name="test-sft-trainer-correctness",
       model_name="default",

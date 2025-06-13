@@ -29,7 +29,7 @@ from datasets import Dataset
 
 import transformers
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.globals import PKG_DIR
 from MaxText.input_pipeline import _hf_data_processing
 from MaxText.input_pipeline import input_pipeline_interface
@@ -107,7 +107,7 @@ class SFTDataProcessingTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.config = pyconfig.initialize(
+    self.config = MaxText.configs.loader.initialize(
         [os.path.join(PKG_DIR, "sft_trainer"), os.path.join(PKG_DIR, "configs", "sft.yml")],
         per_device_batch_size=2,
         run_name="test",

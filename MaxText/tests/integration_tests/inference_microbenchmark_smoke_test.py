@@ -20,7 +20,7 @@ import pytest
 import unittest
 from absl.testing import absltest
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.globals import PKG_DIR
 from MaxText.inference_microbenchmark import run_benchmarks
 
@@ -32,7 +32,7 @@ class Inference_Microbenchmark(unittest.TestCase):
   @pytest.mark.tpu_only
   def test(self):
     jax.config.update("jax_default_prng_impl", "unsafe_rbg")
-    config = pyconfig.initialize(
+    config = MaxText.configs.loader.initialize(
         [
             None,
             os.path.join(PKG_DIR, "configs", "tpu_smoke_test.yml"),

@@ -23,7 +23,7 @@ from jetstream.core import server_lib, config_lib
 
 import jax
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import maxengine_config
 
 # _PORT = flags.DEFINE_integer('port', 9000, 'port to listen on')
@@ -84,5 +84,5 @@ def main(config):
 if __name__ == "__main__":
   jax.config.update("jax_default_prng_impl", "unsafe_rbg")
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
-  cfg = pyconfig.initialize(sys.argv)
+  cfg = MaxText.configs.loader.initialize(sys.argv)
   main(cfg)

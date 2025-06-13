@@ -34,7 +34,7 @@ import transformers
 from datasets import load_dataset
 
 from MaxText import maxtext_utils
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText.experimental.rl.grpo_trainer import compute_log_probs, grpo_loss_fn, _merge_grpo_state
 from MaxText.globals import PKG_DIR
 from MaxText.layers import models
@@ -44,7 +44,7 @@ class GRPOTest(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.cfg = pyconfig.initialize(
+    self.cfg = MaxText.configs.loader.initialize(
         [None, os.path.join(PKG_DIR, "experimental", "rl", "grpo.yml")],
         run_name="grpo_test",
         model_name="llama3.1-8b",

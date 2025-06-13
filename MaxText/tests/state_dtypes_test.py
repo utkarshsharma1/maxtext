@@ -22,7 +22,7 @@ import jax
 from jax.sharding import Mesh
 import jax.numpy as jnp
 
-from MaxText import pyconfig
+import MaxText.configs.loader
 from MaxText import optimizers
 from MaxText.layers import models
 from MaxText.layers import quantizations
@@ -39,7 +39,7 @@ class StateDtypes(unittest.TestCase):
     """Gets model state including weights and optimizer state"""
 
     # Setup necessary inputs to build a model state
-    config = pyconfig.initialize(argv)
+    config = MaxText.configs.loader.initialize(argv)
     quant = quantizations.configure_quantization(config)
     devices_array = maxtext_utils.create_device_mesh(config)
     mesh = Mesh(devices_array, config.mesh_axes)
