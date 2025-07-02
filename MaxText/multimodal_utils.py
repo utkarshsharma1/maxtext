@@ -312,17 +312,31 @@ def split_to_tiles_jax(images: np.ndarray, num_tiles_height: int, num_tiles_widt
   return tiled_images
 
 
+# def pre_process_gemma3_image(image):
+#   """Performs a bi-linear resize (with anti-aliasing) and normalizes the image."""
+#   image_shape = (GEMMA_DEFAULT_IMAGE_SIZE, GEMMA_DEFAULT_IMAGE_SIZE, NUM_IMAGE_CHANNELS)
+#   image = jax.image.resize(
+#       image,
+#       shape=image_shape,
+#       method="bilinear",
+#       antialias=True,
+#   )
+#   image = _normalize_images(image, mean=GEMMA_IMAGE_MEAN, std=GEMMA_IMAGE_STD)
+#   image = jnp.clip(image, -1, 1)
+#   processor_output = PreprocessorOutput(
+#       pixel_values=image,
+#   )
+#   return processor_output
+
 def pre_process_gemma3_image(image):
   """Performs a bi-linear resize (with anti-aliasing) and normalizes the image."""
-  image_shape = (GEMMA_DEFAULT_IMAGE_SIZE, GEMMA_DEFAULT_IMAGE_SIZE, NUM_IMAGE_CHANNELS)
-  image = jax.image.resize(
-      image,
-      shape=image_shape,
-      method="bilinear",
-      antialias=True,
-  )
+  resample_method = Image.Resampling.BILINEAR
+  pil_img = Image.fromarray(np.asarray(image))
+  pil_img = pil_img.resize((GEMMA_DEFAULT_IMAGE_SIZE, GEMMA_DEFAULT_IMAGE_SIZE), resample=resample_method)
+  image = np.array(pil_img).astype(np.float32)
+
   image = _normalize_images(image, mean=GEMMA_IMAGE_MEAN, std=GEMMA_IMAGE_STD)
-  image = jnp.clip(image, -1, 1)
+  image = np.clip(image, -1, 1)
   processor_output = PreprocessorOutput(
       pixel_values=image,
   )
