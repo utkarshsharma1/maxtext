@@ -328,6 +328,7 @@ def split_to_tiles_jax(images: np.ndarray, num_tiles_height: int, num_tiles_widt
 #   )
 #   return processor_output
 
+
 def pre_process_gemma3_image(image):
   """Performs a bi-linear resize (with anti-aliasing) and normalizes the image."""
   resample_method = Image.Resampling.BILINEAR
@@ -856,3 +857,12 @@ def _merge_mm_embeddings_inner(text_embeddings, vision_embeddings, mask):
   merged = merged.at[0].set(first_pos)
 
   return merged
+
+
+def get_image_placeholder(model_name):
+  if model_name in ["gemma3-4b", "gemma3-12b", "gemma3-27b"]:
+    return GEMMA_IMAGE_PLACEHOLDER_IN_PROMPT
+  elif model_name in ["llama4-17b-16e", "llama4-17b-128e"]:
+    return LLAMA4_IMAGE_PLACEHOLDER_IN_PROMPT
+  else:
+    raise ValueError(f"Model {model_name} does not support multimodal inference.")

@@ -48,9 +48,12 @@ import sys
 from absl import flags
 
 import datasets
+import numpy as np
+from typing import List, Optional
 
 import jax
 
+from dataclasses import dataclass
 from benchmarks.mmlu.mmlu_categories import categories
 from benchmarks.mmlu.mmlu_categories import subcategories
 
@@ -64,11 +67,9 @@ from MaxText import multimodal_utils
 
 ASCII_UPPERCASE_A = ord("A")  # ASCII value for uppercase 'A'
 
-DEFAULT_PROMPT_TEMPLATE = """The following are multiple choice questions (with answers) about {subject}.
-
-{question}
+DEFAULT_PROMPT_TEMPLATE = """{image_placeholder}{question}
 {choices}
-Answer:"""
+Give me answer directly in the format <answer>your_answer</answer>."""
 
 
 _PROMPT_TEMPLATE = flags.DEFINE_string(
@@ -77,18 +78,44 @@ _PROMPT_TEMPLATE = flags.DEFINE_string(
     help="prompt template",
 )
 
+@dataclass
+class ParsedDatasetExample:
+  """Parsed example from the HuggingFace dataset."""
+  question: Optional[str] = None
+  image_np: Optional[np.ndarray] = None
+  choices: Optional[List[str]] = None
+  answer: Optional[str] = None
 
-def construct_prompt(subject, question, choices):
-  subject = subject.replace("_", " ")
-  choices_text = "\n".join(f"{chr(ASCII_UPPERCASE_A + idx)}. {choice}" for idx, choice in enumerate(choices))
-  prompt = _PROMPT_TEMPLATE.value.format(subject=subject, question=question, choices=choices_text)
+
+def parse_dataset_example(example, hf_dataset_name):
+  """Parse a single example from the HuggingFace dataset."""
+  parsed_example = ParsedDatasetExample()
+  if hf_dataset_name == "HuggingFaceM4/ChartQA":
+    parsed_example.question = example["query"]
+    parsed_example.image_np = np.asarray(example["image"].convert("RGB")) # Convert PIL object to np array
+    parsed_example.answer = example["label"][0]
+  else:
+    raise ValueError(f"Unsupported dataset: {hf_dataset_name}")
+  return parsed_example
+
+
+def construct_prompt(parsed_dataset_example: ParsedDatasetExample, config):
+  """Construct prompt from a parsed dataset example."""
+  image_placeholder = multimodal_utils.get_image_placeholder(config.model_name) if config.use_multimodal else ""
+  choices_text = "\n".join(f"{chr(ASCII_UPPERCASE_A + idx)}. {choice}" for idx, choice in enumerate(parsed_dataset_example.choices)) if parsed_dataset_example.choices else ""
+  prompt = DEFAULT_PROMPT_TEMPLATE.format(
+    image_placeholder=image_placeholder, 
+    question=parsed_dataset_example.question, 
+    choices=choices_text
+  )
+  # Add extra model-specific formatting such as user/model/assistant tags
+  prompt = multimodal_utils.reformat_prompt(prompt, config.model_name)
   return prompt
 
 
-def parse_answer(output):
-  match = re.search(r"Answer:\s*([A-D])|(?:The answer is)\s*([A-D])", output, re.IGNORECASE)
-  predicted_answer = match.group(1) or match.group(2) if match else None
-  return predicted_answer
+def parse_answer(output_string):
+  match = re.search(r"<answer>(.*?)</answer>", output_string, re.DOTALL) # re.s makes . match newlines as well
+  return match.group(1) if match else None
 
 
 def main(config):
@@ -110,19 +137,14 @@ def main(config):
   subcat_total = collections.defaultdict(int)
 
   hf_dataset_name = "HuggingFaceM4/ChartQA"
-  mmlu_test_ds = datasets.load_dataset(hf_dataset_name, "default", split="test")
-  for idx, example in enumerate(tqdm(mmlu_test_ds, desc="Evaluating MMLU dataset")):
-    image_pil = example["image"]
-    query = example["query"]
-    label = example["label"]
-    print(example)
-
+  test_ds = datasets.load_dataset(hf_dataset_name, "default", split="test")
+  for idx, example in enumerate(tqdm(test_ds, desc=f"Evaluating {hf_dataset_name} dataset")):
     prefill_length = config.max_prefill_predict_length
-    processor_output = multimodal_utils.pre_process_image(image_pil.convert("RGB"), model_name=config.model_name)
-    prompt = multimodal_utils.reformat_prompt(multimodal_utils.GEMMA_IMAGE_PLACEHOLDER_IN_PROMPT + query, config.model_name)
+    parsed_dataset_example = parse_dataset_example(example, hf_dataset_name)
+    prompt = construct_prompt(parsed_dataset_example, config)
+    processor_output = multimodal_utils.pre_process_image(parsed_dataset_example.image_np, model_name=config.model_name)
     prefill_length -= multimodal_utils.get_image_offsets(config.model_name, processor_output=processor_output)
-    print(prompt)
-    print("*"*100)
+    print("*"*50)
 
     # Tokenize the input
     tokens, true_length = tokenizer.encode(prompt, is_bos=True, prefill_lengths=[prefill_length])
@@ -156,7 +178,7 @@ def main(config):
     for _ in steps:
       # Decode generated tokens so far
       output = tokenizer.decode(sampled_tokens)
-      predicted_answer = parse_answer(prompt + output)
+      predicted_answer = parse_answer(output)
       if predicted_answer:
         break
 
@@ -166,29 +188,33 @@ def main(config):
       if sampled_tokens[-1] == tokenizer.eos_id:
         break
 
-    if not predicted_answer:
-      max_logging.log("Could not extract an answer from the model's output for example" f" {total_count + 1}")
-    elif predicted_answer not in {chr(ASCII_UPPERCASE_A + idx) for idx in range(len(choices))}:
-      max_logging.log(f"Invalid or missing predicted answer for subject '{subject}' in example {total_count + 1}")
+    # if not predicted_answer:
+    #   max_logging.log("Could not extract an answer from the model's output for example" f" {total_count + 1}")
+    # elif predicted_answer not in {chr(ASCII_UPPERCASE_A + idx) for idx in range(len(choices))}:
+    #   max_logging.log(f"Invalid or missing predicted answer for subject '{subject}' in example {total_count + 1}")
 
     # Convert the label index to the corresponding letter
-    correct_answer = chr(65 + label)
+    # correct_answer = chr(65 + label)
+    correct_answer = parsed_dataset_example.answer if parsed_dataset_example.answer else correct_answer
+    # I feel like this should be more robust
+    is_correct = correct_answer in predicted_answer if predicted_answer is not None else False
 
     # Log answer
     max_logging.log(
         f"{total_count + 1} | {prompt}\n[Model output] {output}\n"
-        f"[Correct answer] {correct_answer}, Matching: {predicted_answer == correct_answer}"
+        f"[Correct answer] {correct_answer}, Matching: {is_correct}"
     )
 
     # Update accuracy for overall and per-subject
-    if predicted_answer == correct_answer:
+    if is_correct:
       correct_count += 1
-      subject_correct[subject] += 1
+      # subject_correct[subject] += 1
     total_count += 1
-    subject_total[subject] += 1
+    # subject_total[subject] += 1
+    max_logging.log(f"Running accuracy: {correct_count / (total_count):.4f} | Processed: {total_count}/{len(test_ds)}")
 
     if idx % 50 == 0:
-      max_logging.log(f" Accuracy: {correct_count / total_count:.4f} | Processed: {total_count}/{len(mmlu_test_ds)}")
+      max_logging.log(f" Accuracy: {correct_count / total_count:.4f} | Processed: {total_count}/{len(test_ds)}")
 
   # Final accuracy
   if total_count > 0:
