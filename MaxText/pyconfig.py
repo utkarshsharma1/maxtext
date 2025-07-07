@@ -163,6 +163,12 @@ def validate_keys(keys):
   validate_prefill_and_target_lengths(keys["max_prefill_predict_length"], keys["max_target_length"])
   validate_rope_type(keys["rope_type"])
 
+  if keys["mtp_num_layers"] > 0 and keys["model_call_mode"] == "inference":
+    raise ValueError(
+        "Multi-Token Prediction (MTP) is enabled (mtp_num_layers > 0), but it is not supported in inference mode. "
+        "Please disable MTP by setting mtp_num_layers=0 for inference."
+    )
+
   assert (keys["load_parameters_path"] == "" and keys["load_full_state_path"] == "") or keys[
       "enable_checkpointing"
   ], "You must set enable_checkpointing to load a checkpoint"
@@ -190,7 +196,7 @@ def validate_keys(keys):
   if keys["num_experts"] > 1:
     validate_sparse_matmul_parallelism(keys)
     validate_deepseek_moe(keys)
-    assert (keys["decoder_block"] != "qwen3"), "Qwen3 MoE mode has not been tested, please set num_experts to 1."
+    assert keys["decoder_block"] != "qwen3", "Qwen3 MoE mode has not been tested, please set num_experts to 1."
 
   if keys["use_multimodal"]:
     validate_multimodal_model_name(keys["model_name"])
@@ -207,9 +213,9 @@ def validate_tokenizer(keys):
 
 def validate_constant_bound(keys):
   if keys["constant_bound_config"] == "":
-    keys["constant_bound_config"]=[]
+    keys["constant_bound_config"] = []
   else:
-    value_list = keys["constant_bound_config"].split(',')
+    value_list = keys["constant_bound_config"].split(",")
     keys["constant_bound_config"] = list(map(float, value_list))
   assert (
       len(keys["constant_bound_config"]) == 0 or len(keys["constant_bound_config"]) == 6

@@ -45,6 +45,7 @@ from MaxText import checkpointing
 from MaxText import max_logging
 from MaxText import max_utils
 from MaxText.common_types import DecoderBlockType, MODEL_MODE_PREFILL, MODEL_MODE_AUTOREGRESSIVE
+from MaxText.globals import EPS
 from MaxText.inference.page_manager import PageState
 from MaxText.layers.decoders import DecoderLayer
 from MaxText.layers import (
@@ -1041,6 +1042,27 @@ def create_learning_rate_schedule(config):
   return optax.join_schedules(pieces, boundaries)
 
 
+def roll_and_mask(x: jnp.ndarray, shift: int = -1) -> jnp.ndarray:
+  """
+  Performs a leftward roll on the sequence axis (axis=1) and masks the
+  newly created invalid positions at the end of the sequence.
+  Assumes input `x` has a batch dimension at axis 0 and sequence at axis 1.
+
+  Args:
+    x: The input array of shape [batch, seq_len, ...].
+    shift: The number of positions to shift left.
+
+  Returns:
+    The rolled array of the same shape as x.
+  """
+  # If shift is 0, it's a no-op. Return the original array.
+  if shift == 0:
+    return x
+
+  # to set the last `abs(shift)` elements of the sequence to zero.
+  return jnp.roll(x, shift, axis=1).at[:, shift:, ...].set(0)
+
+
 def get_formatted_sharding_annotations(params, mesh=None):
   """
   Generates a readable string report of sharding annotations for all parameters.
@@ -1139,3 +1161,50 @@ def get_decoder_layers(config):
       return [llama4.Llama4ScannableBlock] if config.scan_layers else [llama4.Llama4DecoderLayer]
     case _:
       raise ValueError(f"Incorrect decoder_block name {config.decoder_block.value=}")
+
+
+def calculate_mtp_loss(intermediate_outputs, config):
+  """Calculates the Multi Token Prediction loss from intermediate outputs."""
+  losses_path = ("mtp_losses", "mtp_block", "losses")
+  weights_path = ("mtp_losses", "mtp_block", "weights")
+
+  mtp_losses = get_nested_value(intermediate_outputs, losses_path, default=())
+  mtp_weights = get_nested_value(intermediate_outputs, weights_path, default=())
+
+  if not mtp_losses:  # MTP heads did not run
+    return 0.0
+
+  sum_of_all_mtp_losses = jnp.sum(jnp.array(mtp_losses))
+  sum_of_all_mtp_weights = jnp.sum(jnp.array(mtp_weights))
+
+  avg_mtp_loss = sum_of_all_mtp_losses / (sum_of_all_mtp_weights + EPS)
+  scaled_mtp_loss = avg_mtp_loss * config.mtp_loss_scaling_factor
+  return scaled_mtp_loss
+
+
+def calculate_mtp_acceptance_rate(intermediate_outputs, config):
+  """Calculates the MTP acceptance rate from intermediate outputs."""
+  if config.mtp_eval_target_layer <= 0:
+    return 0.0
+
+  sown_data = get_nested_value(intermediate_outputs, ("mtp_acceptance", "mtp_block"), {})
+  mtp_preds = get_nested_value(sown_data, ("mtp_preds",), [None])[0]
+  valid_mask = get_nested_value(sown_data, ("mtp_mask",), [None])[0]
+
+  if mtp_preds is None or valid_mask is None:
+    return 0.0
+
+  # Get the main model's greedy predictions from the logits.
+  main_model_preds = jnp.argmax(intermediate_outputs["logits"], axis=-1)
+
+  # Roll the main model's predictions to align them in time with the MTP head's target.
+  rolled_main_preds = main_model_preds
+  for _ in range(config.mtp_eval_target_layer):
+    rolled_main_preds = roll_and_mask(rolled_main_preds)
+
+  # Compare the aligned predictions, applying the valid_mask to ignore junk values.
+  correct_predictions = jnp.sum((mtp_preds == rolled_main_preds) * valid_mask)
+  total_valid_tokens = jnp.sum(valid_mask)
+
+  # Return acceptance rate as a percentage
+  return (correct_predictions / (total_valid_tokens + EPS)) * 100
