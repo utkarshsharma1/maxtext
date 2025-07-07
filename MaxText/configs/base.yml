@@ -142,6 +142,7 @@ mtp_num_layers: 0
 # The scaling factor (lambda) for the MTP auxiliary loss. The final loss is:
 # main_loss + mtp_loss_scaling_factor * avg_mtp_loss
 mtp_loss_scaling_factor: 0.1
+mtp_eval_target_layer: 1
 
 # mixture of experts (moe)
 num_experts: 1
