@@ -209,16 +209,16 @@ class MultiTokenPredictionBlock(nn.Module):
       if not self.is_initializing():
         # For evaluation, save the top prediction and a valid token mask.
         # This is only active for the target layer during an eval run.
-        if cfg.mtp_eval_target_layer == k and self.is_mutable_collection('mtp_acceptance'):
-            mtp_top_1_pred = jnp.argmax(mtp_logits, axis=-1)
-            self.sow('mtp_acceptance', 'mtp_preds', mtp_top_1_pred)
-            self.sow('mtp_acceptance', 'mtp_mask', rolled_target_mask)
+        if cfg.mtp_eval_target_layer == k and self.is_mutable_collection("mtp_acceptance"):
+          mtp_top_1_pred = jnp.argmax(mtp_logits, axis=-1)
+          self.sow("mtp_acceptance", "mtp_preds", mtp_top_1_pred)
+          self.sow("mtp_acceptance", "mtp_mask", rolled_target_mask)
 
         # For training, save the loss components for this MTP head.
         # This is only active during a training run.
-        if self.is_mutable_collection('mtp_losses'):
-            self.sow('mtp_losses', 'losses', jnp.sum(mtp_xent_masked))
-            self.sow('mtp_losses', 'weights', jnp.sum(rolled_target_mask))
+        if self.is_mutable_collection("mtp_losses"):
+          self.sow("mtp_losses", "losses", jnp.sum(mtp_xent_masked))
+          self.sow("mtp_losses", "weights", jnp.sum(rolled_target_mask))
 
       # The output of this layer is the input for the next, maintaining the causal chain.
       mtp_hidden_state = next_mtp_hidden_state
