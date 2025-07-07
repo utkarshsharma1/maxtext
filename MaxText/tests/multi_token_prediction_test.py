@@ -25,9 +25,9 @@ from MaxText.common_types import Config
 from MaxText import max_logging, pyconfig
 from MaxText import maxtext_utils
 from MaxText.globals import PKG_DIR
-from MaxText.layers.decoders import DecoderLayer
+from MaxText.layers.decoders import Decoder, DecoderLayer
 from MaxText.layers import multi_token_prediction  # The class under test
-from MaxText.layers import blocks, embeddings
+from MaxText.layers import embeddings
 
 TEST_LAYER_NUM = 1
 
@@ -127,14 +127,14 @@ class MTPBlockTestModel(nn.Module):
     self.shared_embedding = embeddings.Embed(
         num_embeddings=self.config.vocab_size, features=self.config.base_emb_dim, name="token_embedder", config=self.config
     )
-    self.decoder = blocks.Decoder(
+    self.decoder = Decoder(
         config=self.config, mesh=self.mesh, shared_embedding=self.shared_embedding, name="decoder_for_mtp"
     )
     self.mtp_block = multi_token_prediction.MultiTokenPredictionBlock(
         config=self.config,
         mesh=self.mesh,
         name="mtp_block",
-        transformer_layer_module=blocks.DecoderLayer,
+        transformer_layer_module=DecoderLayer,
         decoder=self.decoder,
     )
 
