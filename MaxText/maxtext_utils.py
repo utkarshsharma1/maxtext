@@ -46,6 +46,20 @@ from MaxText import max_logging
 from MaxText import max_utils
 from MaxText.common_types import DecoderBlockType, MODEL_MODE_PREFILL, MODEL_MODE_AUTOREGRESSIVE
 from MaxText.inference.page_manager import PageState
+from MaxText.layers.decoders import DecoderLayer
+from MaxText.layers import (
+    gemma,
+    gemma2,
+    gemma3,
+    gpt3,
+    llama2,
+    llama4,
+    mistral,
+    mixtral,
+    deepseek,
+    simple_layer,
+    qwen3,
+)
 
 OVERWRITE_WITH_GRADIENT = "_overwrite_with_gradient"
 
@@ -911,14 +925,8 @@ def create_device_mesh(config, devices=None):
   """Creates a device mesh with each slice in its own data parallel group. If there is only one slice, uses two replicas"""
   if devices is None:
     devices = jax.devices()
-  if (
-      config.subslice_shape
-      and config.enable_single_controller
-      and config.num_slices == 1
-  ):
-    max_logging.log(
-        f"Trying to create a subslice with shape: {config.subslice_shape}"
-    )
+  if config.subslice_shape and config.enable_single_controller and config.num_slices == 1:
+    max_logging.log(f"Trying to create a subslice with shape: {config.subslice_shape}")
     subslice_shape = tuple(int(x) for x in config.subslice_shape.split(","))
     device_coords = [device.coords for device in devices]
     device_coords_np = np.array(device_coords)
@@ -1095,3 +1103,39 @@ def get_formatted_sharding_annotations(params, mesh=None):
     annotation_lines.append(f" - Param: {param_name_str}\n" f"   Shape: {shape_str}\n" f"   Sharding: {sharding_desc}")
   # Join all the collected lines into a single string, separated by newlines.
   return "\n".join(annotation_lines)
+
+
+def get_decoder_layers(config):
+  """
+  Helper function to get the list of decoder layer classes based on config.
+  """
+  match config.decoder_block:
+    case DecoderBlockType.DEFAULT:
+      return [DecoderLayer]
+    case DecoderBlockType.LLAMA2:
+      return [llama2.LlamaDecoderLayer]
+    case DecoderBlockType.MISTRAL:
+      # TODO(ranran): update to Mistral with sliding window attention
+      return [mistral.MistralDecoderLayer]
+    case DecoderBlockType.MIXTRAL:
+      return [mixtral.MixtralDecoderLayer]
+    case DecoderBlockType.DEEPSEEK:
+      return [deepseek.DeepSeekDenseLayer, deepseek.DeepSeekMoELayer]
+    case DecoderBlockType.GEMMA:
+      return [gemma.GemmaDecoderLayer]
+    case DecoderBlockType.GEMMA2:
+      return [gemma2.Gemma2DecoderLayer]
+    case DecoderBlockType.GEMMA3:
+      return [gemma3.Gemma3DecoderLayer]
+    case DecoderBlockType.GPT3:
+      return [gpt3.Gpt3DecoderLayer]
+    case DecoderBlockType.QWEN3:
+      return [qwen3.Qwen3DecoderLayer]
+    case DecoderBlockType.SIMPLE:
+      return [simple_layer.SimpleDecoderLayer]
+    case DecoderBlockType.SIMPLE_MLP:
+      return [simple_layer.SimpleMlpDecoderLayer]
+    case DecoderBlockType.LLAMA4:
+      return [llama4.Llama4ScannableBlock] if config.scan_layers else [llama4.Llama4DecoderLayer]
+    case _:
+      raise ValueError(f"Incorrect decoder_block name {config.decoder_block.value=}")
