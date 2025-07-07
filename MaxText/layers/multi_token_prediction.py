@@ -205,19 +205,20 @@ class MultiTokenPredictionBlock(nn.Module):
       mtp_xent, _ = max_utils.cross_entropy_with_logits(mtp_logits, jax.nn.one_hot(rolled_target_ids, cfg.vocab_size), 0.0)
       mtp_xent_masked = mtp_xent * rolled_target_mask
 
-      # This runs only if the feature is enabled (flag > 0), for the specific layer (k == flag),
-      # and when the 'mtp_acceptance' collection is mutable (i.e., during eval).
-      if not self.is_initializing() and cfg.mtp_eval_target_layer == k and self.is_mutable_collection("mtp_acceptance"):
-        mtp_top_1_pred = jnp.argmax(mtp_logits, axis=-1)
-        self.sow("mtp_acceptance", "mtp_preds", mtp_top_1_pred)
-        self.sow("mtp_acceptance", "mtp_mask", rolled_target_mask)
-
-      # This condition ensures loss is only computed during training runs (`.apply`),
-      # and not during model initialization (`.init()`).
+      # This logic doesn't run during model initialization.
       if not self.is_initializing():
-        # "Sow" the loss values into the 'mtp_losses' collection for the
-        self.sow("mtp_losses", "losses", jnp.sum(mtp_xent_masked))
-        self.sow("mtp_losses", "weights", jnp.sum(rolled_target_mask))
+        # For evaluation, save the top prediction and a valid token mask.
+        # This is only active for the target layer during an eval run.
+        if cfg.mtp_eval_target_layer == k and self.is_mutable_collection('mtp_acceptance'):
+            mtp_top_1_pred = jnp.argmax(mtp_logits, axis=-1)
+            self.sow('mtp_acceptance', 'mtp_preds', mtp_top_1_pred)
+            self.sow('mtp_acceptance', 'mtp_mask', rolled_target_mask)
+
+        # For training, save the loss components for this MTP head.
+        # This is only active during a training run.
+        if self.is_mutable_collection('mtp_losses'):
+            self.sow('mtp_losses', 'losses', jnp.sum(mtp_xent_masked))
+            self.sow('mtp_losses', 'weights', jnp.sum(rolled_target_mask))
 
       # The output of this layer is the input for the next, maintaining the causal chain.
       mtp_hidden_state = next_mtp_hidden_state
