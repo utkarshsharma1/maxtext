@@ -705,9 +705,6 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
 
   # decoder norm scale ###########################################
   max_logging.log("Processing decoder norm scale")
-  # if is_llama4_model:
-  #   decoder_norm_scale = chkpt_vars[0]["norm.weight"].type(torch.float32).numpy().astype(CAST_DTYPE)
-  # else:
   decoder_norm_scale = chkpt_vars["norm.weight"].to(torch.float32).numpy().astype(CAST_DTYPE)
   jax_weights["decoder"]["decoder_norm"]["scale"] = decoder_norm_scale
 
