@@ -143,20 +143,6 @@ MODEL_PARAMS_DICT = {
         "interleave_moe_layer_step": 1,
         "inhomogeneous_layer_cycle_interval": 4,
     },
-    # debug
-    "llama4-17b-16e-4layer": {
-        "num_layers": 4,
-        "num_heads": 40,
-        "num_kv_heads": 8,
-        "dims_per_head": 128,
-        "vocab": 202048,
-        "base_emb_dim": 5120,
-        "num_experts": 16,
-        "rope_type": "llama3.1",
-        "scale_query": False,
-        "interleave_moe_layer_step": 1,
-        "inhomogeneous_layer_cycle_interval": 4,
-    },
     "llama4-17b-128e": {
         "num_layers": 48,
         "num_heads": 40,
@@ -589,24 +575,6 @@ def convert_lora_weights_to_jax_weights(lora_config: dict, model_size: str):
   return jax_weights_lora
 
 
-# debug
-def print_nested_keys(data, prefix=""):
-  """
-  Prints nested keys of a dictionary-like structure in a directory-like format.
-  Args:
-      data: The dictionary-like structure to traverse.
-      prefix: The current path prefix.
-  """
-  if isinstance(data, dict):
-    for key in data:
-      current_path = f"{prefix}{key}."
-      print_nested_keys(data[key], current_path)
-  elif hasattr(data, "shape"):
-    print(f"key | {prefix.rstrip('.')} | {tuple(data.shape)}")
-  else:
-    print(f"key | {prefix.rstrip('.')} | None")
-
-
 def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, model_params: dict, mem_info: psutil.Process):
   """Convert a Huggingface Checkpoint to a dictionary of Numpy arrays representing the weights.
 
@@ -745,26 +713,14 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
   decoder_norm_scale = chkpt_vars["norm.weight"].to(torch.float32).numpy().astype(CAST_DTYPE)
   jax_weights["decoder"]["decoder_norm"]["scale"] = decoder_norm_scale
 
-  # debug
-  print("decoder.decoder_norm.scale", jax_weights["decoder"]["decoder_norm"]["scale"].shape)
-
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
   # logits dense #################################################
   max_logging.log("Processing logits dense")
 
-  # if is_llama4_model:
-  #   logits_dense = np.concatenate(
-  #       [var["output.weight"].type(torch.float32).numpy().astype(CAST_DTYPE) for var in chkpt_vars], axis=0
-  #   ).transpose()[:, :vocab_size]
-  #   jax_weights["decoder"]["logits_dense"]["kernel"] = logits_dense
-  # else:
   jax_weights["decoder"]["logits_dense"]["kernel"] = (
       chkpt_vars["output.weight"].to(torch.float32).numpy().astype(CAST_DTYPE).transpose()[:, :vocab_size]
   )
-
-  # debug
-  print("decoder.logits_dense.kernel", jax_weights["decoder"]["logits_dense"]["kernel"].shape)
 
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
@@ -780,14 +736,9 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
         chkpt_vars["tok_embeddings.weight"].to(torch.float32).numpy().astype(CAST_DTYPE)[:vocab_size, :]
     )
 
-  # debug
-  print("token_embedder.embedding", jax_weights["token_embedder"]["embedding"].shape)
-  # breakpoint()
-
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
   # self attention ###############################################
-  # TODO(shuningjin): think whether to process layer-by-layer or block-by-block
   max_logging.log("Processing self attention")
   for layer_idx in tqdm(range(base_num_decoder_layers), desc="layers", leave=False):
     if is_llama4_model:
@@ -856,21 +807,10 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
     if scale_query:
       self_attention["query"]["kernel"] = self_attention["query"]["kernel"] / (np.sqrt(head_dim).astype(CAST_DTYPE))  # pylint: disable=E1137
 
-  # debug
-  for i in range(layer_cycle_interval):
-    print_nested_keys(
-        jax_weights["decoder"]["layers"][f"layers_{i}"]["self_attention"],
-        prefix=f"decoder.layers.layers_{i}.self_attention.",
-    )
-  # breakpoint()
-
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
   # layer weight pre and post self attention norm ################
   max_logging.log("Processing pre and post self attention norms")
-
-  # if not is_llama4_model:
-  #   layer_weight = {"pre_self_attention_layer_norm": {"scale": None}, "post_self_attention_layer_norm": {"scale": None}}
 
   # self attention layer norm and swap the layer index
   for layer_idx in tqdm(range(base_num_decoder_layers), desc="layers", leave=False):
@@ -912,18 +852,6 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
     layer_weight["post_self_attention_layer_norm"]["scale"] = np.transpose(
         layer_weight["post_self_attention_layer_norm"]["scale"], axes=(1, 0)
     )
-
-  # debug
-  for i in range(layer_cycle_interval):
-    print(
-        f"decoder.layers.layers_{i}.pre_self_attention_layer_norm.scale",
-        jax_weights["decoder"]["layers"][f"layers_{i}"]["pre_self_attention_layer_norm"]["scale"].shape,
-    )
-    print(
-        f"decoder.layers.layers_{i}.post_self_attention_layer_norm.scale",
-        jax_weights["decoder"]["layers"][f"layers_{i}"]["post_self_attention_layer_norm"]["scale"].shape,
-    )
-  # breakpoint()
 
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
@@ -1125,19 +1053,6 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
         layer_weight["Llama4MoEBlock_0"]["shared_experts"]["wo"]["kernel"] = np.transpose(
             layer_weight["Llama4MoEBlock_0"]["shared_experts"]["wo"]["kernel"], axes=(1, 0, 2)
         )
-
-  # debug
-  for block_idx in range(layer_cycle_interval):
-    is_dense_layer = (block_idx + 1) % interleave_moe_layer != 0
-    if is_dense_layer:
-      print_nested_keys(
-          jax_weights["decoder"]["layers"][f"layers_{block_idx}"]["mlp"], prefix=f"decoder.layers.layers_{block_idx}.mlp."
-      )
-    else:
-      print_nested_keys(
-          jax_weights["decoder"]["layers"][f"layers_{block_idx}"]["Llama4MoEBlock_0"],
-          prefix=f"decoder.layers.layers_{block_idx}.Llama4MoEBlock_0.",
-      )
 
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
@@ -1790,13 +1705,13 @@ if __name__ == "__main__":
 
   if args.model_size.startswith("llama4") and not args.huggingface_checkpoint:
     raise NotImplementedError("Currently only support llama4 conversion from huggingface safetensor")
-  # TODO(shuningjin): remove once implemented
-  # llama4_17b_128e = "llama4-17b-128e"
-  # if args.model_size == llama4_17b_128e:
-  #   raise NotImplementedError(
-  #       f"Currently, the `{llama4_17b_128e}` model only supports unscanned checkpoint conversion.  "
-  #       f"Please use `MaxText/llama4_ckpt_unscanned.py` instead!"
-  #   )
+  # TODO: remove once implemented
+  llama4_17b_128e = "llama4-17b-128e"
+  if args.model_size == llama4_17b_128e:
+    raise NotImplementedError(
+        f"Currently, the `{llama4_17b_128e}` model only supports unscanned checkpoint conversion.  "
+        f"Please use `MaxText/llama4_ckpt_unscanned.py` instead!"
+    )
 
   os.environ["XLA_FLAGS"] = f"--xla_force_host_platform_device_count={SIMULATED_CPU_DEVICES_COUNT}"
   base_weights_path = args.maxtext_model_path
