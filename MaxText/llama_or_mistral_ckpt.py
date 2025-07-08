@@ -63,7 +63,6 @@ from MaxText import checkpointing
 from MaxText import max_logging
 from MaxText import max_utils
 from MaxText.inference_utils import str2bool
-from MaxText.train import save_checkpoint
 from MaxText.utils import gcs_utils
 
 MODEL_PARAMS_DICT = {
@@ -142,6 +141,9 @@ MODEL_PARAMS_DICT = {
         "scale_query": False,
         "interleave_moe_layer_step": 1,
         "inhomogeneous_layer_cycle_interval": 4,
+        "num_layers_vit": 34,
+        "num_att_head_vit": 16,
+        "hidden_size_vit": 1408,
     },
     "llama4-17b-128e": {
         "num_layers": 48,
@@ -1660,7 +1662,7 @@ def save_weights_to_checkpoint(
 
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
   if checkpoint_manager is not None:
-    if save_checkpoint(checkpoint_manager, step_number_to_save_new_ckpt, state_new):
+    if checkpointing.save_checkpoint(checkpoint_manager, step_number_to_save_new_ckpt, state_new):
       max_logging.log(f"saved a checkpoint at step {step_number_to_save_new_ckpt}")
     # Upon preemption, exit when and only when all ongoing saves are complete.
     checkpoint_manager.wait_until_finished()
