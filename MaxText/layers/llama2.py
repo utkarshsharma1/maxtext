@@ -29,7 +29,7 @@ from flax import linen as nn
 
 from MaxText.inference import page_manager
 from MaxText.layers import linears
-from MaxText.layers import models
+from MaxText.common_types import Config
 from MaxText.layers import quantizations
 from MaxText.layers.attentions import Attention
 from MaxText.layers.quantizations import AqtQuantization as Quant
@@ -44,7 +44,7 @@ from MaxText.layers.normalizations import rms_norm
 class LlamaDecoderLayer(nn.Module):
   """Transformer decoder layer that attends to the encoder."""
 
-  config: models.Config
+  config: Config
   mesh: Mesh
   quant: Optional[Quant] = None
 
