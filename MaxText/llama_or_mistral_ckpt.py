@@ -610,7 +610,6 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
 
     with safe_open(ckpt_path, framework="pt", device="cpu") as f:
       for key in f.keys():
-        print("key | ", key)
         parts = key.split(".")
         if is_llama4_model:
           layer = int(parts[3]) if "layers" in key else 0
@@ -620,11 +619,8 @@ def _convert_huggingface_to_jax_weights(base_model_path: str, model_size: str, m
             continue
         else:
           layer = int(parts[2]) if "layers" in key else 0
-        print("layer | ", layer)
         mapped_key = _hf_to_maxtext_mapping(layer)[key]
-        print("mapped_key | ", mapped_key)
         chkpt_vars[mapped_key] = f.get_tensor(key)
-    # breakpoint()
 
   logging.debug("Memory usage: %f GB", mem_info.memory_info().rss / (1024**3))
 
